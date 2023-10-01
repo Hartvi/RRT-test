@@ -3,44 +3,10 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
 #include "load.h"
+#include "model.h"
 
-void copy_to_PQP3x3(PQP_REAL real[3][3], const Eigen::Matrix3<double> &m)
+void check_collision(PQPModel *m1, PQPModel *m2)
 {
-    // Ensure the matrix is 3x3
-    if (m.rows() != 3 || m.cols() != 3)
-    {
-        throw std::invalid_argument("The provided matrix is not 3x3.");
-    }
-
-    for (int i = 0; i < 3; ++i)
-    {
-        for (int j = 0; j < 3; ++j)
-        {
-            real[i][j] = m(i, j);
-        }
-    }
-}
-
-void copy_to_PQP3(PQP_REAL real[3], const Eigen::Vector3<double> &m)
-{
-    std::cout << "rows: " << m.rows() << "  cols: " << m.cols() << std::endl;
-    // // Ensure the matrix is 3x3
-    // if (m.rows() != 3)
-    // {
-    //     throw std::invalid_argument("The provided matrix is not 3x3.");
-    // }
-
-    for (int i = 0; i < 3; ++i)
-    {
-        real[i] = m(i);
-    }
-}
-
-void check_collision(PQP_Model *m1, PQP_Model *m2)
-{
-    PQP_REAL R1[3][3], R2[3][3], T1[3], T2[3];
-    // PQP_REAL M1[3][3], M2[3][3], M3[3][3];
-
     // rotation
     Eigen::Matrix3d I = Eigen::Matrix3d::Identity();
 
@@ -51,50 +17,20 @@ void check_collision(PQP_Model *m1, PQP_Model *m2)
     Ry2 = Eigen::AngleAxisd(M_PI / 2, Eigen::Vector3d::UnitY());
     Rz2 = Eigen::AngleAxisd(M_PI / 2, Eigen::Vector3d::UnitZ());
     Eigen::Matrix3d result = I * Rx2;
-    PQP_REAL real[3][3];
-    copy_to_PQP3x3(real, result);
-
-    // translation
-    Eigen::Vector3d t(1.0, 2.0, 3.0); // Just an example, you can set whatever values you need.
-    PQP_REAL real_vec[3];
-    copy_to_PQP3(real_vec, t);
-
-    T1[0] = -1;
-    T1[1] = 0.0;
-    T1[2] = 0.0;
-
-    T2[0] = 1;
-    T2[1] = 0.0;
-    T2[2] = 0.0;
-
-    for (int i = 0; i < 3; i++)
-    {
-        R1[i][i] = 1;
-        R2[i][i] = 1;
-    }
-
-    // int mode;
-    // double beginx, beginy;
-    // double dis = 10.0, azim = 0.0, elev = 0.0;
-    // double ddis = 0.0, dazim = 0.0, delev = 0.0;
-    // double rot1 = 0.0, rot2 = 0.0, rot3 = 0.0;
-
-    // MRotX(M1, rot1);
-    // MRotY(M2, rot2);
-    // MxM(M3, M1, M2);
-    // MRotZ(M1, rot3);
-    // MxM(R1, M3, M1);
-
-    // MRotX(M1, rot3);
-    // MRotY(M2, rot1);
-    // MxM(M3, M1, M2);
-    // MRotZ(M1, rot2);
-    // MxM(R2, M3, M1);
+    Eigen::Vector3d t1(1.0, 2.0, 3.0); // Just an example, you can set whatever values you need.
 
     PQP_REAL rel_err = 0.0;
     PQP_REAL abs_err = 0.0;
     PQP_DistanceResult res;
-    PQP_Distance(&res, R1, T1, m1, R2, T2, m2, rel_err, abs_err);
+    // m1->getR();
+    std::cout << Rz2 << std::endl;
+    std::cout << Rz2 * I << std::endl;
+    // m1->Rotate(Rz2);
+    m1->Translate(t1);
+    m2->Translate(-t1);
+    // m1->getR();
+    PQPModel::CheckDistance(&res, rel_err, abs_err, m1, m2);
+
     std::cout << "Result: p1 ";
     for (int i = 0; i < 3; i++)
     {
@@ -143,6 +79,8 @@ int main(int argc, char **argv)
         std::cout << "obj2 buildstate: " << obj2->build_state << std::endl;
     }
 
-    check_collision(obj1, obj2);
+    PQPModel *model1 = new PQPModel(obj1);
+    PQPModel *model2 = new PQPModel(obj2);
+    check_collision(model1, model2);
     return 0;
 }

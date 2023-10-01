@@ -19,7 +19,7 @@ public:
     Eigen::Matrix<PQP_REAL, 3, 1> t; // Translation vector
     PQP_Model *pqpModel;             // Pointer to PQP_Model which is collidable
 
-    PQP_REAL (*getR())
+    PQP_REAL(*getR())
     [3];
     PQP_REAL *getT();
     void Rotate(Matrix<double, 3, 3> rotation);
@@ -28,7 +28,7 @@ public:
     // PQP_REAL rel_err = 0.0;
     // PQP_REAL abs_err = 0.0;
     // PQP_DistanceResult res;
-    static void CheckDistance(PQP_DistanceResult result, PQP_REAL rel_err, PQP_REAL abs_err, PQPModel *m1, PQPModel *m2);
+    static void CheckDistance(PQP_DistanceResult *result, PQP_REAL rel_err, PQP_REAL abs_err, PQPModel *m1, PQPModel *m2);
 
 private:
     PQP_REAL rotation[3][3];

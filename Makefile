@@ -11,9 +11,9 @@ CFLAGS += -I/usr/local/include/eigen3
 LDFLAGS	= -L. -L/usr/local/lib/ -L../PQP/lib/ -lstdc++fs
 LDLIBS  = -lPQP -lm
 
-SRCS    = main.cc load.cc
+SRCS    = main.cc load.cc model.cc
 
-OBJECTS	= main.o load.o
+OBJECTS	= main.o load.o model.o
 
 TARGET = load_obj_test
 
