@@ -6,12 +6,13 @@ using namespace Eigen;
 
 typedef Matrix<PQP_REAL, Dynamic, Dynamic, RowMajor> RowMatrixXi;
 
-class PQPModel
+class TrPQPModel
 {
 public:
     // Constructors & Destructors
-    PQPModel(std::unique_ptr<PQP_Model> model = nullptr, std::string filePath = "");
-    ~PQPModel() = default;
+    TrPQPModel(std::unique_ptr<PQP_Model> model = nullptr, std::string filePath = "");
+    TrPQPModel(std::string filePath = "");
+    ~TrPQPModel() = default;
 
     // Public member functions (e.g., setters and getters) can be added as needed
 
@@ -27,12 +28,14 @@ public:
     void Rotate(Matrix<double, 3, 3> rotation);
     void Translate(Vector3<double> translation);
 
+    void SetRotation(Matrix<double, 3, 3> rotation);
+    void SetTranslation(Vector3<double> translation);
+
     Vector3<PQP_REAL> GetGlobalPositionFromVector(Vector3<PQP_REAL> p) const;
     Vector3<PQP_REAL> GetGlobalPositionFromPointer(PQP_REAL p[3]) const;
-    // PQP_REAL rel_err = 0.0;
-    // PQP_REAL abs_err = 0.0;
-    // PQP_DistanceResult res;
-    static void CheckDistance(PQP_DistanceResult *result, PQP_REAL rel_err, PQP_REAL abs_err, PQPModel *m1, PQPModel *m2);
+
+    static void CheckDistance(PQP_DistanceResult *result, PQP_REAL rel_err, PQP_REAL abs_err, TrPQPModel *m1, TrPQPModel *m2);
+    static void Collide(PQP_CollideResult *result, TrPQPModel *m1, TrPQPModel *m2);
 
 private:
     PQP_REAL rotation[3][3];

@@ -6,6 +6,7 @@ class RRTNode
 public:
     /// @brief Index of the node in the RRTNodeWrapper.nodes array
     int parent;
+
     /// @brief 3D coordinates of the node in C-space
     double location[3];
 
@@ -32,6 +33,14 @@ public:
     {
         delete index;
         delete[] data.ptr();
+    }
+
+    void add_node(int p, double xyz[3])
+    {
+        nodes.emplace_back(p, xyz[0], xyz[1], xyz[2]);
+
+        // have to build index to register the new node
+        buildIndex();
     }
 
     void buildIndex()
@@ -72,15 +81,28 @@ private:
     flann::Index<flann::L2<double>> *index;
 };
 
-class PQPEnvWrapper
+class TrPQPEnvWrapper
 {
 public:
     // std::vector<PQPModel *> nodes;
-    std::vector<std::unique_ptr<PQPModel>> nodes;
+    /// @brief 1st element is the robot model, the rest is obstacles
+    std::vector<std::unique_ptr<TrPQPModel>> nodes;
+
+    /// @brief location coordinates are independent of the models and comprise te RRT tree
+    RRTNodeWrapper *node_wrapper;
+
     /// @brief Initialize the environment with existing & loaded models
-    // PQPEnvWrapper(std::vector<PQPModel *> models) : nodes(models)
-    PQPEnvWrapper(std::vector<std::unique_ptr<PQPModel>> models) : nodes(std::move(models))
+    TrPQPEnvWrapper(std::vector<std::unique_ptr<TrPQPModel>> models) : nodes(std::move(models))
     {
+        std::cout << "Model build state: " << nodes[0].get()->pqpModel.get()->build_state << std::endl;
+        std::cout << "Initial position: " << nodes[0].get()->getT()[0] << ", " << nodes[0].get()->getT()[1] << ", " << nodes[0].get()->getT()[2] << std::endl;
+
+        const double initial_position[3] = {nodes[0].get()->getT()[0], nodes[0].get()->getT()[1], nodes[0].get()->getT()[2]};
+
+        this->node_wrapper = new RRTNodeWrapper(nodes[0].get()->getT());
     }
-    ~PQPEnvWrapper() = default; // Destructor will automatically delete the unique pointers.
+    ~TrPQPEnvWrapper() // Destructor will automatically delete the unique pointers.
+    {
+        delete node_wrapper;
+    }
 };

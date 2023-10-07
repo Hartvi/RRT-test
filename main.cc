@@ -50,14 +50,14 @@ std::string join(const Iterable &items, const std::string &delimiter = ",")
     return oss.str();
 }
 
-string print_state(PQPModel *m1, PQPModel *m2)
+string print_state(TrPQPModel *m1, TrPQPModel *m2)
 {
     PQP_REAL rel_err = 0.0;
     PQP_REAL abs_err = 0.0;
     PQP_DistanceResult res;
     ostringstream oss;
 
-    PQPModel::CheckDistance(&res, rel_err, abs_err, m1, m2);
+    TrPQPModel::CheckDistance(&res, rel_err, abs_err, m1, m2);
 
     oss << "p1,";
     oss << join(3, res.p1);
@@ -85,7 +85,7 @@ string print_state(PQPModel *m1, PQPModel *m2)
     return oss.str();
 }
 
-void loop_rotation(PQPModel *m1, PQPModel *m2, string outfile)
+void loop_rotation(TrPQPModel *m1, TrPQPModel *m2, string outfile)
 {
     // Eigen::Matrix3d I = Eigen::Matrix3d::Identity();
     Eigen::Matrix3d Rx2;
@@ -96,8 +96,8 @@ void loop_rotation(PQPModel *m1, PQPModel *m2, string outfile)
     Ry2 = Eigen::AngleAxisd(M_PI / steps, Eigen::Vector3d::UnitY());
     Rz2 = Eigen::AngleAxisd(M_PI / steps, Eigen::Vector3d::UnitZ());
 
-    Eigen::Vector3d t1(2.0, 0.0, 0.0);
-    Eigen::Vector3d t2(-2.0, 0.0, 0.0);
+    Eigen::Vector3d t1(0.9, 0.0, 0.0);
+    Eigen::Vector3d t2(-0.9, 0.0, 0.0);
 
     // PQP_REAL rel_err = 0.0;
     // PQP_REAL abs_err = 0.0;
@@ -130,7 +130,7 @@ void loop_rotation(PQPModel *m1, PQPModel *m2, string outfile)
     myfile.close();
 }
 
-void check_collision(PQPModel *m1, PQPModel *m2)
+void check_collision(TrPQPModel *m1, TrPQPModel *m2)
 {
     // rotation
     Eigen::Matrix3d I = Eigen::Matrix3d::Identity();
@@ -154,7 +154,7 @@ void check_collision(PQPModel *m1, PQPModel *m2)
     m1->Translate(t1);
     m2->Translate(-t1);
     // m1->getR();
-    PQPModel::CheckDistance(&res, rel_err, abs_err, m1, m2);
+    TrPQPModel::CheckDistance(&res, rel_err, abs_err, m1, m2);
 
     std::cout << "Result: p1 ";
     for (int i = 0; i < 3; i++)
@@ -191,51 +191,29 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    // load obj then create pqp object
-
-    tinyobj::ObjReader reader;
-    // PQP_Model *obj1 = new PQP_Model();
-    // PQP_Model *obj2 = new PQP_Model();
-    auto obj1 = std::make_unique<PQP_Model>();
-    auto obj2 = std::make_unique<PQP_Model>();
-
-    pqploader::read_file(argv[1], reader);
-
-    if (pqploader::tiny_OBJ_to_PQP_model(reader, obj1.get()))
-    {
-        std::cout << "obj1 buildstate: " << obj1->build_state << std::endl;
-        std::cout << "obj2 buildstate: " << obj2->build_state << std::endl;
-    }
-
-    pqploader::read_file(argv[2], reader);
-
-    if (pqploader::tiny_OBJ_to_PQP_model(reader, obj2.get()))
-    {
-        std::cout << "obj1 buildstate: " << obj1->build_state << std::endl;
-        std::cout << "obj2 buildstate: " << obj2->build_state << std::endl;
-    }
-
-    auto model1 = std::make_unique<PQPModel>(std::move(obj1), argv[1]);
-    auto model2 = std::make_unique<PQPModel>(std::move(obj2), argv[2]);
-
-    // PQPModel *model1 = new PQPModel(obj1, argv[1]);
-    // PQPModel *model2 = new PQPModel(obj2, argv[2]);
-    // std::unique_ptr<PQPModel> model1 = std::make_unique<PQPModel>(obj1, argv[1]);
-    // std::unique_ptr<PQPModel> model2 = std::make_unique<PQPModel>(obj2, argv[2]);
+    auto model1 = std::make_unique<TrPQPModel>(argv[1]);
+    auto model2 = std::make_unique<TrPQPModel>(argv[2]);
 
     // check_collision(model1, model2);
     loop_rotation(model1.get(), model2.get(), argv[3]);
 
-    // PQPEnvWrapper *a = new PQPEnvWrapper({model1, model2});
-    // std::cout << "a->nodes: " << a->nodes.size() << std::endl;
-    std::vector<std::unique_ptr<PQPModel>> models;
+    std::vector<std::unique_ptr<TrPQPModel>> models;
     models.push_back(std::move(model1));
     models.push_back(std::move(model2));
 
-    auto a = std::make_unique<PQPEnvWrapper>(std::move(models));
+    auto a = std::make_unique<TrPQPEnvWrapper>(std::move(models));
 
-    // auto a = std::make_unique<PQPEnvWrapper>(std::vector<std::unique_ptr<PQPModel>>{std::move(model1), std::move(model2)});
+    // nearest point test
+    double d3[3] = {1.0, 1.0, 1.0};
+    int nearest_point_idx = a->node_wrapper->nearest(d3);
+
     std::cout << "a->nodes: " << a->nodes.size() << std::endl;
+    std::cout << "nearest point: " << nearest_point_idx << std::endl;
+    a->node_wrapper->add_node(nearest_point_idx, d3);
+
+    nearest_point_idx = a->node_wrapper->nearest(d3);
+    std::cout << "a->nodes: " << a->nodes.size() << std::endl;
+    std::cout << "nearest point: " << nearest_point_idx << std::endl;
 
     return 0;
 }

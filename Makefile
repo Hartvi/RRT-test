@@ -6,7 +6,7 @@ CFLAGS += -Wmissing-include-dirs -Wall -Wextra -Wpedantic
 CFLAGS += -I/usr/local/include/eigen3
 
 LDFLAGS	= -L. -L/usr/local/lib/ -L../PQP/lib/ -lstdc++fs
-LDLIBS  = -lPQP -lm
+LDLIBS  = -lPQP -lm -lflann -llz4
 
 SRCS    = main.cc load.cc model.cc
 OBJECTS	= main.o load.o model.o
