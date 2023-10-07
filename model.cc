@@ -2,10 +2,10 @@
 #include "model.h"
 
 // Implementation of constructor and destructor
-PQPModel::PQPModel(PQP_Model *model, std::string filePath)
+PQPModel::PQPModel(std::unique_ptr<PQP_Model> model, std::string filePath)
     : R(Matrix<PQP_REAL, 3, 3>::Identity()), // Initialized as identity matrix
       t(Matrix<PQP_REAL, 3, 1>::Zero()),     // Initialized as zero vector
-      pqpModel(model),                       // Set the external PQP_Model
+      pqpModel(std::move(model)),            // Set the external PQP_Model
       filePath(filePath)
 {
     if (filePath.empty())
@@ -76,5 +76,5 @@ Vector3<PQP_REAL> PQPModel::GetGlobalPositionFromPointer(PQP_REAL p[3]) const
 
 void PQPModel::CheckDistance(PQP_DistanceResult *result, PQP_REAL rel_err, PQP_REAL abs_err, PQPModel *m1, PQPModel *m2)
 {
-    PQP_Distance(result, m1->getR(), m1->getT(), m1->pqpModel, m2->getR(), m2->getT(), m2->pqpModel, rel_err, abs_err);
+    PQP_Distance(result, m1->getR(), m1->getT(), m1->pqpModel.get(), m2->getR(), m2->getT(), m2->pqpModel.get(), rel_err, abs_err);
 }

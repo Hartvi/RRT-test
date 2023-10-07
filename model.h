@@ -1,4 +1,5 @@
 #include <Eigen/Dense>
+#include <memory>
 #include "PQP.h"
 
 using namespace Eigen;
@@ -9,15 +10,15 @@ class PQPModel
 {
 public:
     // Constructors & Destructors
-    PQPModel(PQP_Model *model = nullptr, std::string filePath = "");
-    ~PQPModel();
+    PQPModel(std::unique_ptr<PQP_Model> model = nullptr, std::string filePath = "");
+    ~PQPModel() = default;
 
     // Public member functions (e.g., setters and getters) can be added as needed
 
     // Public member variables
-    Eigen::Matrix<PQP_REAL, 3, 3> R; // Rotation matrix
-    Eigen::Matrix<PQP_REAL, 3, 1> t; // Translation vector
-    PQP_Model *pqpModel;             // Pointer to PQP_Model which is collidable
+    Eigen::Matrix<PQP_REAL, 3, 3> R;     // Rotation matrix
+    Eigen::Matrix<PQP_REAL, 3, 1> t;     // Translation vector
+    std::unique_ptr<PQP_Model> pqpModel; // Pointer to PQP_Model which is collidable
     std::string filePath;
 
     PQP_REAL(*getR())

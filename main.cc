@@ -3,11 +3,17 @@
 #include <list>
 #include <fstream>
 #include <iostream>
+#include <stdio.h>
 #include <Eigen/Dense>
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
 #include "load.h"
 #include "model.h"
+#include <flann/flann.hpp>
+// #include <flann/io/hdf5.h>
+#include "rrt_base.h"
+
+// flann::flann_checks_t f;
 
 using namespace std;
 
@@ -169,6 +175,10 @@ void check_collision(PQPModel *m1, PQPModel *m2)
     std::cout << std::endl;
 }
 
+void test_RRT_tree()
+{
+}
+
 int main(int argc, char **argv)
 {
     std::cout << "argc: ";
@@ -181,15 +191,17 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    // lod obj then create pqp object
+    // load obj then create pqp object
 
     tinyobj::ObjReader reader;
-    PQP_Model *obj1 = new PQP_Model();
-    PQP_Model *obj2 = new PQP_Model();
+    // PQP_Model *obj1 = new PQP_Model();
+    // PQP_Model *obj2 = new PQP_Model();
+    auto obj1 = std::make_unique<PQP_Model>();
+    auto obj2 = std::make_unique<PQP_Model>();
 
     pqploader::read_file(argv[1], reader);
 
-    if (pqploader::tiny_OBJ_to_PQP_model(reader, obj1))
+    if (pqploader::tiny_OBJ_to_PQP_model(reader, obj1.get()))
     {
         std::cout << "obj1 buildstate: " << obj1->build_state << std::endl;
         std::cout << "obj2 buildstate: " << obj2->build_state << std::endl;
@@ -197,16 +209,33 @@ int main(int argc, char **argv)
 
     pqploader::read_file(argv[2], reader);
 
-    if (pqploader::tiny_OBJ_to_PQP_model(reader, obj2))
+    if (pqploader::tiny_OBJ_to_PQP_model(reader, obj2.get()))
     {
         std::cout << "obj1 buildstate: " << obj1->build_state << std::endl;
         std::cout << "obj2 buildstate: " << obj2->build_state << std::endl;
     }
 
-    PQPModel *model1 = new PQPModel(obj1, argv[1]);
-    PQPModel *model2 = new PQPModel(obj2, argv[2]);
+    auto model1 = std::make_unique<PQPModel>(std::move(obj1), argv[1]);
+    auto model2 = std::make_unique<PQPModel>(std::move(obj2), argv[2]);
+
+    // PQPModel *model1 = new PQPModel(obj1, argv[1]);
+    // PQPModel *model2 = new PQPModel(obj2, argv[2]);
+    // std::unique_ptr<PQPModel> model1 = std::make_unique<PQPModel>(obj1, argv[1]);
+    // std::unique_ptr<PQPModel> model2 = std::make_unique<PQPModel>(obj2, argv[2]);
+
     // check_collision(model1, model2);
-    loop_rotation(model1, model2, argv[3]);
+    loop_rotation(model1.get(), model2.get(), argv[3]);
+
+    // PQPEnvWrapper *a = new PQPEnvWrapper({model1, model2});
+    // std::cout << "a->nodes: " << a->nodes.size() << std::endl;
+    std::vector<std::unique_ptr<PQPModel>> models;
+    models.push_back(std::move(model1));
+    models.push_back(std::move(model2));
+
+    auto a = std::make_unique<PQPEnvWrapper>(std::move(models));
+
+    // auto a = std::make_unique<PQPEnvWrapper>(std::vector<std::unique_ptr<PQPModel>>{std::move(model1), std::move(model2)});
+    std::cout << "a->nodes: " << a->nodes.size() << std::endl;
 
     return 0;
 }
