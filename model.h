@@ -9,6 +9,7 @@ typedef Matrix<PQP_REAL, Dynamic, Dynamic, RowMajor> RowMatrixXi;
 class TrPQPModel
 {
 public:
+    // Copy constructor:
     // Constructors & Destructors
     TrPQPModel(std::unique_ptr<PQP_Model> model = nullptr, std::string filePath = "");
     TrPQPModel(std::string filePath = "");
@@ -34,8 +35,14 @@ public:
     Vector3<PQP_REAL> GetGlobalPositionFromVector(Vector3<PQP_REAL> p) const;
     Vector3<PQP_REAL> GetGlobalPositionFromPointer(PQP_REAL p[3]) const;
 
-    static void CheckDistance(PQP_DistanceResult *result, PQP_REAL rel_err, PQP_REAL abs_err, TrPQPModel *m1, TrPQPModel *m2);
-    static void Collide(PQP_CollideResult *result, TrPQPModel *m1, TrPQPModel *m2);
+    /// @brief Intance-wise distance check
+    void CheckDistance(PQP_DistanceResult *result, PQP_REAL rel_err, PQP_REAL abs_err, TrPQPModel *m2);
+
+    /// @brief Intance-wise collision check
+    void Collide(PQP_CollideResult *result, TrPQPModel *m2);
+
+    static void CheckDistanceStatic(PQP_DistanceResult *result, PQP_REAL rel_err, PQP_REAL abs_err, TrPQPModel *m1, TrPQPModel *m2);
+    static void CollideStatic(PQP_CollideResult *result, TrPQPModel *m1, TrPQPModel *m2);
 
 private:
     PQP_REAL rotation[3][3];

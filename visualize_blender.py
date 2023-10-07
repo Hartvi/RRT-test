@@ -104,6 +104,7 @@ track_to_constraint.up_axis = 'UP_Y'
 track_to_constraint.track_axis = "TRACK_NEGATIVE_Z"
 
 
+# CANNOT OVERWRITE FILES
 bpy.context.scene.render.filepath = "/home/hartvi/Pictures/img.png"
 bpy.context.scene.render.resolution_x = 800
 bpy.context.scene.render.resolution_y = 600

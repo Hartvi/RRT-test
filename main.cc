@@ -57,7 +57,7 @@ string print_state(TrPQPModel *m1, TrPQPModel *m2)
     PQP_DistanceResult res;
     ostringstream oss;
 
-    TrPQPModel::CheckDistance(&res, rel_err, abs_err, m1, m2);
+    TrPQPModel::CheckDistanceStatic(&res, rel_err, abs_err, m1, m2);
 
     oss << "p1,";
     oss << join(3, res.p1);
@@ -154,7 +154,7 @@ void check_collision(TrPQPModel *m1, TrPQPModel *m2)
     m1->Translate(t1);
     m2->Translate(-t1);
     // m1->getR();
-    TrPQPModel::CheckDistance(&res, rel_err, abs_err, m1, m2);
+    TrPQPModel::CheckDistanceStatic(&res, rel_err, abs_err, m1, m2);
 
     std::cout << "Result: p1 ";
     for (int i = 0; i < 3; i++)
@@ -181,6 +181,7 @@ void test_RRT_tree()
 
 int main(int argc, char **argv)
 {
+    // run: make clean && make && valgrind --leak-check=full ./load_obj_test ../Models/cube.obj ../Models/cube.obj out.txt
     std::cout << "argc: ";
     std::cout << argc;
     std::cout << "\n";
@@ -191,29 +192,44 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    auto model1 = std::make_unique<TrPQPModel>(argv[1]);
-    auto model2 = std::make_unique<TrPQPModel>(argv[2]);
+    auto model1 = std::make_shared<TrPQPModel>(argv[1]);
+    // model1->SetRotation();
+    // auto model2 = new TrPQPModel(argv[2]);
 
-    // check_collision(model1, model2);
-    loop_rotation(model1.get(), model2.get(), argv[3]);
+    // // check_collision(model1, model2);
+    // loop_rotation(model1, model2, argv[3]);
 
-    std::vector<std::unique_ptr<TrPQPModel>> models;
-    models.push_back(std::move(model1));
-    models.push_back(std::move(model2));
+    // std::vector<TrPQPModel *> models;
+    // models.push_back(model1);
+    // models.push_back(model2);
 
-    auto a = std::make_unique<TrPQPEnvWrapper>(std::move(models));
+    // auto a = TrPQPEnvWrapper(models);
+    auto a = TrPQPEnvWrapper();
+    a.AddPQPModelExisting(model1);
+    a.AddPQPModelFromPath(argv[2]);
 
     // nearest point test
     double d3[3] = {1.0, 1.0, 1.0};
-    int nearest_point_idx = a->node_wrapper->nearest(d3);
+    int nearest_point_idx = a.node_wrapper->nearest(d3);
 
-    std::cout << "a->nodes: " << a->nodes.size() << std::endl;
-    std::cout << "nearest point: " << nearest_point_idx << std::endl;
-    a->node_wrapper->add_node(nearest_point_idx, d3);
-
-    nearest_point_idx = a->node_wrapper->nearest(d3);
-    std::cout << "a->nodes: " << a->nodes.size() << std::endl;
+    std::cout << "a->nodes: " << a.pqp_models.size() << std::endl;
     std::cout << "nearest point: " << nearest_point_idx << std::endl;
 
+    double d31[3] = {1.1, 1.0, 1.0};
+
+    a.node_wrapper->add_node(nearest_point_idx, d31);
+    nearest_point_idx = a.node_wrapper->nearest(d3);
+
+    std::cout << "a->nodes: " << a.pqp_models.size() << std::endl;
+    std::cout << "nearest point: " << nearest_point_idx << std::endl;
+
+    a.node_wrapper->add_node(nearest_point_idx, d3);
+    nearest_point_idx = a.node_wrapper->nearest(d3);
+
+    std::cout << "a->nodes: " << a.pqp_models.size() << std::endl;
+    std::cout << "nearest point: " << nearest_point_idx << std::endl;
+
+    double world_bound = 10;
+    a.RRT(world_bound);
     return 0;
 }

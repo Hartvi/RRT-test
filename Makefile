@@ -3,6 +3,7 @@
 CC = g++
 CFLAGS  = -O2 -I. -I/usr/local/include/ -I../PQP/include/ -std=c++17 
 CFLAGS += -Wmissing-include-dirs -Wall -Wextra -Wpedantic
+CFLAGS += -g  # FOR DEBUG ONLY
 CFLAGS += -I/usr/local/include/eigen3
 
 LDFLAGS	= -L. -L/usr/local/lib/ -L../PQP/lib/ -lstdc++fs

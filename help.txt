@@ -1,0 +1,10 @@
+// dependencies of .so
+ldd yourfile.so
+
+// demangled names:
+nm -D yourfile.so | c++filt
+
+// memory check
+valgrind --leak-check=full ./load_obj_test ../Models/cube.obj ../Models/cube.obj out.txt
+
+- NOTE: always use std::move(variable) with smart pointers
