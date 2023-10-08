@@ -1,6 +1,7 @@
 #include <flann/flann.hpp>
 #include <vector>
 #include <random>
+#include <fstream>
 
 class RRTNode
 {
@@ -70,6 +71,11 @@ public:
     double *GetNodeLocation(int index)
     {
         return this->nodes[index].location;
+    }
+
+    size_t GetNumberOfNodes()
+    {
+        return this->nodes.size();
     }
 
 private:
@@ -161,8 +167,18 @@ public:
         return false;
     }
 
-    void RRT(double world_bound, size_t max_iters = 1000)
+    void RRT(double world_bound, std::string target_path = "", size_t max_iters = 1000)
     {
+        std::ofstream f;
+        f.open(target_path);
+
+        f << "m" << 0 << "," << this->pqp_models[0].get()->filePath;
+        for (int j = 1; j < this->pqp_models.size(); ++j)
+        {
+            f << ",m" << j << "," << this->pqp_models[j].get()->filePath;
+        }
+        f << std::endl;
+
         const size_t N = max_iters;
 
         // Initialize random engine and distribution
@@ -185,6 +201,12 @@ public:
             if (this->CheckCollision())
             {
                 std::cout << "RANDOM POINT: collision at: " << target_vector << std::endl;
+                f << "rand_only,"
+                  << r3[0]
+                  << ","
+                  << r3[1]
+                  << ","
+                  << r3[2] << std::endl;
                 continue;
             }
 
@@ -197,14 +219,31 @@ public:
 
             if (this->CheckCollision())
             {
-                std::cout << "CLOSE POINT: collision at: " << target_vector << std::endl;
+                std::cout << "RANDOM POINT: collision at: " << target_vector << std::endl;
+                std::cout << "CLOSE POINT: collision at: " << closer_point << std::endl;
+                f << "orig," << nearest_point_vector[0] << "," << nearest_point_vector[1] << "," << nearest_point_vector[2] << std::endl;
+                f << "close," << closer_point[0] << "," << closer_point[1] << "," << closer_point[2] << std::endl;
+                f << "rand," << r3[0] << "," << r3[1] << "," << r3[2] << std::endl;
                 continue;
             }
             // TODO: check collision of closer point, if not colliding, then add it to the tree
 
             this->node_wrapper.get()
                 ->add_node(nearest_point_index, closer_point.data());
+            // this->node_wrapper.get()->buildIndex();
+            // std::cout << "Number of nodes: " << this->node_wrapper.get()->GetNumberOfNodes() << std::endl;
+            f << "no_col," << closer_point[0] << "," << closer_point[1] << "," << closer_point[2] << std::endl;
         }
+        std::cout << "Number of nodes: " << this->node_wrapper.get()->GetNumberOfNodes() << std::endl;
+        f.close();
         // TODO VISUALIZE IN BLENDER
     }
+
+    void SetGoal(const Vector3d v)
+    {
+        this->goal = v;
+    }
+
+private:
+    Vector3d goal;
 };

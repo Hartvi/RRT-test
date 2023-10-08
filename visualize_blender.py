@@ -1,10 +1,11 @@
 import bpy
 import os
+import sys
 import math
 import csv
+import time
 
-
-#create a scene
+# create a scene
 # scene = bpy.data.scenes.new("Scene")
 # camera_data = bpy.data.cameras.new("Camera")
 
@@ -18,6 +19,7 @@ Traceback (most recent call last):
   File "<blender_console>", line 1, in <module>
 TypeError: ObjectConstraints.new(): error with argument 1, "type" -  enum "LOL" not found in (, 'CAMERA_SOLVER', 'FOLLOW_TRACK', 'OBJECT_SOLVER', 'COPY_LOCATION', 'COPY_ROTATION', 'COPY_SCALE', 'COPY_TRANSFORMS', 'LIMIT_DISTANCE', 'LIMIT_LOCATION', 'LIMIT_ROTATION', 'LIMIT_SCALE', 'MAINTAIN_VOLUME', 'TRANSFORM', 'TRANSFORM_CACHE', 'CLAMP_TO', 'DAMPED_TRACK', 'IK', 'LOCKED_TRACK', 'SPLINE_IK', 'STRETCH_TO', 'TRACK_TO', 'ACTION', 'ARMATURE', 'CHILD_OF', 'FLOOR', 'FOLLOW_PATH', 'PIVOT', 'SHRINKWRAP')
 """
+
 
 def cylinder_between(x1, y1, z1, x2, y2, z2, r, mat=None, reuse_cyl=None):
     """
@@ -57,7 +59,8 @@ def cylinder_between(x1, y1, z1, x2, y2, z2, r, mat=None, reuse_cyl=None):
 
 
 def look_at_object(obj_name="Cube"):
-    track_to_constraint = bpy.data.objects["Camera"].constraints.new("TRACK_TO")
+    track_to_constraint = bpy.data.objects["Camera"].constraints.new(
+        "TRACK_TO")
     track_to_constraint.target = bpy.data.objects[obj_name]
     track_to_constraint.up_axis = 'UP_Y'
     track_to_constraint.track_axis = "TRACK_NEGATIVE_Z"
@@ -68,8 +71,6 @@ def save_still(file_path="/home/hartvi/Pictures/img.png"):
     bpy.context.scene.render.resolution_x = 800
     bpy.context.scene.render.resolution_y = 600
     bpy.ops.render.render(write_still=True)
-
-
 
 
 def add_and_set_color(obj, color, mat=None):
@@ -88,27 +89,89 @@ def add_and_set_color(obj, color, mat=None):
     bsdf.inputs[21].default_value = color[3]  # alpha
 
 
-def create_point(location, color, mat=None):
+def create_point(location, color, mat=None) -> str:
+    """Create a point and return its name"""
     # Create uv_sphere at `location` and assing a new material with `color` to it
     bpy.ops.mesh.primitive_uv_sphere_add(location=location, radius=0.2)
     obj = bpy.context.active_object
     obj.location = location
     add_and_set_color(obj, color, mat)
+    return obj.name_full
 
 
-
-"""
-track_to_constraint = bpy.data.objects["Camera"].constraints.new("TRACK_TO")
-track_to_constraint.target = bpy.data.objects["Cube"]
-track_to_constraint.up_axis = 'UP_Y'
-track_to_constraint.track_axis = "TRACK_NEGATIVE_Z"
+def start_scene():
+    set_creation_time(bpy.data)
+    bpy.data.objects.remove(bpy.data.objects["Cube"])
 
 
-# CANNOT OVERWRITE FILES
-bpy.context.scene.render.filepath = "/home/hartvi/Pictures/img.png"
-bpy.context.scene.render.resolution_x = 800
-bpy.context.scene.render.resolution_y = 600
-bpy.ops.render.render(write_still=True)
+def set_creation_time(scene):
+    for obj in scene.objects:
+        if "creation_time" not in obj:
+            obj["creation_time"] = time.time()
 
 
-"""
+def import_obj(filepath) -> str:
+    bpy.ops.import_scene.obj(filepath=filepath)
+    set_creation_time(bpy.data)
+
+
+def get_newest_object():
+    newest_object = None
+    newest_creation_time = 0
+
+    # Iterate through all objects in the scene
+    for obj in bpy.data.objects:
+        # Check if the object is a mesh (or adjust based on the object type you're interested in)
+        creation_time = obj["creation_time"]
+
+        # Compare the creation time to find the newest object
+        if creation_time > newest_creation_time:
+            newest_object = obj
+            newest_creation_time = creation_time
+
+    return newest_object
+
+
+if __name__ == "__main__":
+
+    test_png_path = "/home/hartvi/Pictures/imgtesttt.png"
+    if os.path.exists(test_png_path):
+        os.remove(test_png_path)
+
+    start_scene()
+
+    with open(sys.argv[1], newline='') as csvfile:
+        reader = csv.reader(csvfile, delimiter=',', quotechar='|')
+
+        reader_rows = [row for row in reader]
+        # file1 = reader_rows[0][1]
+        # obj1_name = import_obj(file1)
+
+        file2 = reader_rows[0][3]
+        import_obj(os.path.join(os.getcwd(), file2.replace(" ", "")))
+        obj2 = get_newest_object()
+        obj2.location = (2, 0, 0)
+
+        # print("obj1:", obj1_name, "obj2:", obj2_name)
+        for row in reader_rows:
+            if row[0] == "rand_only":
+                rand_collision_coords = list(map(float, row[1:]))
+                create_point(rand_collision_coords, (1, 1, 0, 1))
+            if row[0] == "no_col":
+                no_collision_coords = list(map(float, row[1:]))
+                create_point(no_collision_coords, (0, 1, 0, 1))
+        # for row in reader:
+        #     print(', '.join(row))
+    # print("reader.line_num", reader.line_num)
+
+    camera = bpy.data.objects["Camera"]
+    camera.location = (20, 20, 20)
+
+    center_point = create_point((0, 0, 0), (1, 1, 0, 1))
+    look_at_object(center_point)
+
+    # CANNOT OVERWRITE FILES
+    bpy.context.scene.render.filepath = test_png_path
+    bpy.context.scene.render.resolution_x = 1600
+    bpy.context.scene.render.resolution_y = 900
+    bpy.ops.render.render(write_still=True)

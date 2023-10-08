@@ -207,29 +207,33 @@ int main(int argc, char **argv)
     auto a = TrPQPEnvWrapper();
     a.AddPQPModelExisting(model1);
     a.AddPQPModelFromPath(argv[2]);
+    a.pqp_models[0].get()->SetTranslation(Vector3d(-2, 0, 0));
+    a.pqp_models[1].get()->SetTranslation(Vector3d(2, 0, 0));
+    a.SetGoal(Vector3d(8, 3, 3));
 
     // nearest point test
-    double d3[3] = {1.0, 1.0, 1.0};
-    int nearest_point_idx = a.node_wrapper->nearest(d3);
+    // double d3[3] = {1.0, 1.0, 1.0};
+    // int nearest_point_idx = a.node_wrapper->nearest(d3);
 
-    std::cout << "a->nodes: " << a.pqp_models.size() << std::endl;
-    std::cout << "nearest point: " << nearest_point_idx << std::endl;
+    // std::cout << "a->nodes: " << a.pqp_models.size() << std::endl;
+    // std::cout << "nearest point: " << nearest_point_idx << std::endl;
 
-    double d31[3] = {1.1, 1.0, 1.0};
+    // double d31[3] = {1.1, 1.0, 1.0};
 
-    a.node_wrapper->add_node(nearest_point_idx, d31);
-    nearest_point_idx = a.node_wrapper->nearest(d3);
+    // a.node_wrapper->add_node(nearest_point_idx, d31);
+    // nearest_point_idx = a.node_wrapper->nearest(d3);
 
-    std::cout << "a->nodes: " << a.pqp_models.size() << std::endl;
-    std::cout << "nearest point: " << nearest_point_idx << std::endl;
+    // std::cout << "a->nodes: " << a.pqp_models.size() << std::endl;
+    // std::cout << "nearest point: " << nearest_point_idx << std::endl;
 
-    a.node_wrapper->add_node(nearest_point_idx, d3);
-    nearest_point_idx = a.node_wrapper->nearest(d3);
+    // a.node_wrapper->add_node(nearest_point_idx, d3);
+    // nearest_point_idx = a.node_wrapper->nearest(d3);
 
-    std::cout << "a->nodes: " << a.pqp_models.size() << std::endl;
-    std::cout << "nearest point: " << nearest_point_idx << std::endl;
+    // std::cout << "a->nodes: " << a.pqp_models.size() << std::endl;
+    // std::cout << "nearest point: " << nearest_point_idx << std::endl;
 
     double world_bound = 10;
-    a.RRT(world_bound);
+    std::string name(argv[3]);
+    a.RRT(world_bound, name, 100);
     return 0;
 }
