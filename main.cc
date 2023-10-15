@@ -186,9 +186,9 @@ int main(int argc, char **argv)
     std::cout << argc;
     std::cout << "\n";
 
-    if (argc < 4)
+    if (argc < 5)
     {
-        std::cout << "Please enter two paths to an obj model to load and an output text file path." << std::endl;
+        std::cout << "Please enter two paths to an obj model to load and an output text file path and number of tree nodes" << std::endl;
         return 1;
     }
 
@@ -205,10 +205,11 @@ int main(int argc, char **argv)
 
     // auto a = TrPQPEnvWrapper(models);
     auto a = TrPQPEnvWrapper();
+    model1->SetTranslation(Vector3d(-2, 0, 0));
+
+    // also set initial position
     a.AddPQPModelExisting(model1);
     a.AddPQPModelFromPath(argv[2]);
-    a.pqp_models[0].get()->SetTranslation(Vector3d(-2, 0, 0));
-    a.pqp_models[1].get()->SetTranslation(Vector3d(2, 0, 0));
     a.SetGoal(Vector3d(8, 3, 3));
 
     // nearest point test
@@ -234,6 +235,7 @@ int main(int argc, char **argv)
 
     double world_bound = 10;
     std::string name(argv[3]);
-    a.RRT(world_bound, name, 100);
+
+    a.RRT(world_bound, name, std::atoi(argv[4]));
     return 0;
 }

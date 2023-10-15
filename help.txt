@@ -8,3 +8,6 @@ nm -D yourfile.so | c++filt
 valgrind --leak-check=full ./load_obj_test ../Models/cube.obj ../Models/cube.obj out.txt
 
 - NOTE: always use std::move(variable) with smart pointers
+
+# BLENDER EXPORT:
+Z FORWARD, Y UP

@@ -2,6 +2,9 @@
 #include <memory>
 #include "PQP.h"
 
+#ifndef MODEL_H
+#define MODEL_H
+
 using namespace Eigen;
 
 typedef Matrix<PQP_REAL, Dynamic, Dynamic, RowMajor> RowMatrixXi;
@@ -48,3 +51,5 @@ private:
     PQP_REAL rotation[3][3];
     PQP_REAL translation[3];
 };
+
+#endif

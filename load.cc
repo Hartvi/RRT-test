@@ -115,49 +115,52 @@ namespace pqploader
         auto &shapes = reader.GetShapes();
 
         // assume only one shape per model
-        if (shapes.size() > 1)
-        {
-            throw std::runtime_error("[ERROR] TinyObjReader: OBJ must have only one shape in function `tiny_OBJ_to_PQP_model`, currently has: " + std::to_string(shapes.size()));
-        }
+        // if (shapes.size() > 1)
+        // {
+        //     throw std::runtime_error("[ERROR] TinyObjReader: OBJ must have only one shape in function `tiny_OBJ_to_PQP_model`, currently has: " + std::to_string(shapes.size()));
+        // }
         auto &materials = reader.GetMaterials();
 
         // Loop over shapes
         std::cout << "[INFO] TinyObjReader: number of shapes: " << shapes.size() << std::endl;
 
-        tinyobj::shape_t shape = shapes[0];
-        // Loop over faces(polygon)
-        size_t index_offset = 0;
-
         target_model->BeginModel();
-        std::cout << "[INFO] TinyObjReader: number of faces: " << shape.mesh.num_face_vertices.size() << std::endl;
-        for (size_t f = 0; f < shape.mesh.num_face_vertices.size(); f++)
+        for (int s = 0; s < shapes.size(); s++)
         {
-            size_t fv = size_t(shape.mesh.num_face_vertices[f]);
+            tinyobj::shape_t shape = shapes[s];
+            // Loop over faces(polygon)
+            size_t index_offset = 0;
 
-            if (fv != 3)
+            std::cout << "[INFO] TinyObjReader: number of faces: " << shape.mesh.num_face_vertices.size() << std::endl;
+            for (size_t f = 0; f < shape.mesh.num_face_vertices.size(); f++)
             {
-                throw std::runtime_error("[ERROR] Mesh must be triangulated.");
-            }
+                size_t fv = size_t(shape.mesh.num_face_vertices[f]);
 
-            PQP_REAL ps[3][3];
-            // Loop over vertices in the face.
-            for (size_t v = 0; v < fv; v++)
-            {
-                PQP_REAL *psv = ps[v];
-                // access to vertex
-                tinyobj::index_t idx = shape.mesh.indices[index_offset + v];
-                int vertex_index = size_t(idx.vertex_index);
-
-                for (size_t i = 0; i < 3; ++i)
+                if (fv != 3)
                 {
-                    tinyobj::real_t vi = attrib.vertices[3 * vertex_index + i];
-                    // typedef PQP_REAL double
-                    psv[i] = (PQP_REAL)vi;
+                    throw std::runtime_error("[ERROR] Mesh must be triangulated.");
                 }
+
+                PQP_REAL ps[3][3];
+                // Loop over vertices in the face.
+                for (size_t v = 0; v < fv; v++)
+                {
+                    PQP_REAL *psv = ps[v];
+                    // access to vertex
+                    tinyobj::index_t idx = shape.mesh.indices[index_offset + v];
+                    int vertex_index = size_t(idx.vertex_index);
+
+                    for (size_t i = 0; i < 3; ++i)
+                    {
+                        tinyobj::real_t vi = attrib.vertices[3 * vertex_index + i];
+                        // typedef PQP_REAL double
+                        psv[i] = (PQP_REAL)vi;
+                    }
+                }
+                target_model->AddTri(ps[0], ps[1], ps[2], f);
+                // always 3 in this case because all the faces are triangles
+                index_offset += fv;
             }
-            target_model->AddTri(ps[0], ps[1], ps[2], f);
-            // always 3 in this case because all the faces are triangles
-            index_offset += fv;
         }
         target_model->EndModel();
         return true;

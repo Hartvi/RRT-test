@@ -86,13 +86,13 @@ def add_and_set_color(obj, color, mat=None):
     # Set the color and alpha parameters
     bsdf = mat.node_tree.nodes["Principled BSDF"]
     bsdf.inputs[0].default_value = color  # color
-    bsdf.inputs[21].default_value = color[3]  # alpha
+#    bsdf.inputs[21].default_value = color[3]  # alpha
 
 
-def create_point(location, color, mat=None) -> str:
+def create_point(location, color, size=0.2, mat=None) -> str:
     """Create a point and return its name"""
     # Create uv_sphere at `location` and assing a new material with `color` to it
-    bpy.ops.mesh.primitive_uv_sphere_add(location=location, radius=0.2)
+    bpy.ops.mesh.primitive_uv_sphere_add(location=location, radius=size)
     obj = bpy.context.active_object
     obj.location = location
     add_and_set_color(obj, color, mat)
@@ -101,7 +101,10 @@ def create_point(location, color, mat=None) -> str:
 
 def start_scene():
     set_creation_time(bpy.data)
-    bpy.data.objects.remove(bpy.data.objects["Cube"])
+    try:
+        bpy.data.objects.remove(bpy.data.objects["Cube"])
+    except:
+        pass
 
 
 def set_creation_time(scene):
@@ -111,7 +114,9 @@ def set_creation_time(scene):
 
 
 def import_obj(filepath) -> str:
-    bpy.ops.import_scene.obj(filepath=filepath)
+    # blender importing seems to be weird.
+    # It switches y and z and shift the third object by 2 in the x axis
+    bpy.ops.import_scene.obj(filepath=filepath, axis_forward='Y', axis_up='Z')
     set_creation_time(bpy.data)
 
 
@@ -139,8 +144,9 @@ if __name__ == "__main__":
         os.remove(test_png_path)
 
     start_scene()
-
-    with open(sys.argv[1], newline='') as csvfile:
+    out_path = "/home/hartvi/Documents/CVUT/diploma_thesis/load_obj_test/out.txt"
+    with open(out_path, newline='') as csvfile:  # blender only
+        #    with open(sys.argv[1], newline='') as csvfile:
         reader = csv.reader(csvfile, delimiter=',', quotechar='|')
 
         reader_rows = [row for row in reader]
@@ -148,30 +154,39 @@ if __name__ == "__main__":
         # obj1_name = import_obj(file1)
 
         file2 = reader_rows[0][3]
-        import_obj(os.path.join(os.getcwd(), file2.replace(" ", "")))
+        import_obj(os.path.join(os.path.dirname(
+            out_path), file2.replace(" ", "")))
         obj2 = get_newest_object()
-        obj2.location = (2, 0, 0)
+#        obj2.location = (2, 0, 0)
 
         # print("obj1:", obj1_name, "obj2:", obj2_name)
         for row in reader_rows:
+            if row[0] == "init":
+                center_point = create_point(
+                    list(map(float, row[1:4])), (1, 1, 0, 1), size=0.5)
+            if row[0] == "goal":
+                center_point = create_point(
+                    list(map(float, row[1:4])), (0, 0, 1, 1), size=0.5)
             if row[0] == "rand_only":
-                rand_collision_coords = list(map(float, row[1:]))
-                create_point(rand_collision_coords, (1, 1, 0, 1))
-            if row[0] == "no_col":
-                no_collision_coords = list(map(float, row[1:]))
+                rand_collision_coords = list(map(float, row[1:4]))
+                create_point(rand_collision_coords, (1, 0, 0, 1))
+            if row[0] == "new":
+                no_collision_coords = list(map(float, row[1:4]))
                 create_point(no_collision_coords, (0, 1, 0, 1))
+                previous_coords = list(map(float, row[5:]))
+                cylinder_between(*no_collision_coords, *previous_coords, 0.1)
         # for row in reader:
         #     print(', '.join(row))
     # print("reader.line_num", reader.line_num)
 
     camera = bpy.data.objects["Camera"]
-    camera.location = (20, 20, 20)
+    camera.location = (20, -20, 20)
 
-    center_point = create_point((0, 0, 0), (1, 1, 0, 1))
+    center_point = create_point((0, 0, 0), (1, 1, 1, 1))
     look_at_object(center_point)
 
     # CANNOT OVERWRITE FILES
     bpy.context.scene.render.filepath = test_png_path
     bpy.context.scene.render.resolution_x = 1600
-    bpy.context.scene.render.resolution_y = 900
+    bpy.context.scene.render.resolution_y = 1600
     bpy.ops.render.render(write_still=True)
